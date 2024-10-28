@@ -2,6 +2,7 @@
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
+project_hash = "dd045e0d06251cca783504ea7c74a303341102bc"
 project_hash = "35fae517e08118d0529ec19badc8bf03e1a4cf73"
 
 [[deps.ADTypes]]
@@ -81,6 +82,12 @@ deps = ["Colors"]
 git-tree-sha1 = "e81c509d2c8e49592413bfb0bb3b08150056c79d"
 uuid = "27a7e980-b3e6-11e9-2bcd-0b925532e340"
 version = "0.4.1"
+
+[[deps.Aqua]]
+deps = ["Compat", "Pkg", "Test"]
+git-tree-sha1 = "49b1d7a9870c87ba13dc63f8ccfcf578cb266f95"
+uuid = "4c88cf16-eb10-579e-8560-4a9242c79595"
+version = "0.8.9"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
