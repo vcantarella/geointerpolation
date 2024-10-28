@@ -3,15 +3,15 @@ using LinearAlgebra
 
 # function to compute distance between two points
 function distance(p1::Vector{T}, p2::Vector{T}) where T
-    @assert 2 <= length(p1) <= 3 "p1 must be a vector of length 2 or 3"
+    #@assert 2 <= length(p1) <= 3 "p1 must be a vector of length 2 or 3"
     @assert length(p2) == length(p1) "p2 have the same lenght as p1"
     return sqrt(reduce(+, (p1-p2).^2))
 end
 
 function distance_matrix(points::Matrix{T}) where T
     # calculates the distance matrix between points (lazily)
-    @assert 2 <= size(points, 2) <= 3 "points must be 2 or 3 dimensional"
-    @assert size(points, 1) > 2 "points must have more than 2 points"
+    #@assert 2 <= size(points, 2) <= 3 "points must be 2 or 3 dimensional"
+    #@assert size(points, 1) > 2 "points must have more than 2 points"
     dist_matrix = zeros(T, size(points, 1), size(points, 1))
     for i in 1:size(points, 1)
         for j in i:size(points, 1)
@@ -67,9 +67,9 @@ function omni_variogram(points::Matrix{T}, values::Vector{T},
     for st in step_range
         γ = 0.0
         n = 0
-        for i in 1:size(points, 1)
-            for j in i:size(points, 1)
-                if dist_matrix[i, j] > st - tol && dist_matrix[i, j] < st + tol
+        for i in 1:(size(points, 1)-1)
+            for j in (i+1):size(points, 1)
+                if  (st - tol) < dist_matrix[i, j] < (st + tol)
                     γ += 0.5 * (values[i] - values[j])^2
                     n += 1
                 end
@@ -178,14 +178,15 @@ function directional_variogram(points::Matrix{T}, values::Vector{T},
 end
 
 """
+Sibut an anisotropic variogram in the vertical direction.
+
 Simpler implementation than a full anisotropic variogram where we can calculate a uniform variogram in the horizontal direction
 but anisotropic vertical direction.
-
 """
 function omni_horizontal_variogram(points::Matrix{T}, values::Vector{T},
     step_h::T, tol_h::T,
     step_v::T, tol_v::T,
-    max_h = nothing,
+    bandwitch_v::T, max_h = nothing
     ) where T
     # calculates the distance matrix between points (lazily) and then computes the 
     # universal variogram.
@@ -214,8 +215,8 @@ function omni_horizontal_variogram(points::Matrix{T}, values::Vector{T},
             vertical_distance = abs(vector_distance[3])
             k = 1
             for st in step_range
-                if horizontal_distance > st - tol_h && horizontal_distance < st + tol_h
-                    γ = 0.5 * (values[i] - values[j])^2
+                if (st - tol_h) < horizontal_distance < (st + tol_h)
+                    γ = (values[i] - values[j])^2
                     γₛₕ[k] += γ
                     nsₕ[k] += 1
                 end
@@ -223,18 +224,20 @@ function omni_horizontal_variogram(points::Matrix{T}, values::Vector{T},
             end
             k = 1
             for st in step_vert
-                if vertical_distance > st - tol_v && vertical_distance < st + tol_v
-                    γ = 0.5 * (values[i] - values[j])^2
-                    nsᵥ[k] += 1
-                    γₛᵥ[k] += γ
+                if  (st - tol_v) < vertical_distance < (st + tol_v)
+                    if horizontal_distance < bandwitch_v
+                        γ = (values[i] - values[j])^2
+                        nsᵥ[k] += 1
+                        γₛᵥ[k] += γ
+                    end
                 end
                 k += 1
             end
         end
     end
     for k in eachindex(γₛₕ)
-        if ns[k] > 0
-            γₛₕ[k] /= nsₕ[k]
+        if nsₕ[k] > 0
+            γₛₕ[k] /= nsₕ[k] .* 0.5
         else
             step_validₕ[k] = false
         end
@@ -243,7 +246,7 @@ function omni_horizontal_variogram(points::Matrix{T}, values::Vector{T},
    step_range = step_range[step_validₕ]
 
    for k in eachindex(γₛᵥ)
-        if ns[k] > 0
+        if nsᵥ[k] > 0
             γₛᵥ[k] /= nsᵥ[k]
         else
             step_validᵥ[k] = false
