@@ -45,7 +45,7 @@ function simple_kriging_omnihorizontal(grid::Matrix{T}, points::Matrix{T},
                 values::Vector{T}, model::Function,
                 p::Vector{T}, μ::T,
                 σ²::T,search_radius::T,
-                max_points = 20) where T
+                min_points=10, max_points = 20) where T
     dist_matrix_h = distance_matrix(points[:, 1:2])
     dist_matrix_v = distance_matrix(hcat(points[:, 3]))
     #unravel parameters for the function
@@ -74,7 +74,7 @@ function simple_kriging_omnihorizontal(grid::Matrix{T}, points::Matrix{T},
                 push!(cov_v, sill - model(dist_h,dist_v, p...))
             end
         end
-        if length(index) == 0
+        if length(index) < min_points
             μₖ[i] = μ
             σ²ₖ[i] = σ²
             continue
@@ -137,7 +137,7 @@ function ordinary_kriging_omnihorizontal(grid::Matrix{T}, points::Matrix{T},
     values::Vector{T}, model::Function,
     p::Vector{T}, μ::T,
     σ²::T,search_radius::T,
-    max_points = 20) where T
+    min_points = 10, max_points = 20) where T
     dist_matrix_h = distance_matrix(points[:, 1:2])
     dist_matrix_v = distance_matrix(hcat(points[:, 3]))
     #unravel parameters for the function
@@ -166,7 +166,7 @@ function ordinary_kriging_omnihorizontal(grid::Matrix{T}, points::Matrix{T},
                 push!(cov_v, sill - model(dist_h,dist_v, p...))
             end
         end
-        if length(index) == 0
+        if length(index) < min_points
             μₖ[i] = NaN
             σ²ₖ[i] = NaN
             continue

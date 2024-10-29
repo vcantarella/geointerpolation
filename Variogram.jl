@@ -188,8 +188,6 @@ function omni_horizontal_variogram(points::Matrix{T}, values::Vector{T},
     step_v::T, tol_v::T,
     bandwitch_v::T, max_h = nothing
     ) where T
-    # calculates the distance matrix between points (lazily) and then computes the 
-    # universal variogram.
     @assert size(values, 1) == size(points, 1) "values must have the same length as points"
     if max_h === nothing
         max_step = maximum(points)-minimum(points)
@@ -207,37 +205,34 @@ function omni_horizontal_variogram(points::Matrix{T}, values::Vector{T},
     γₛᵥ = zeros(T, length(step_vert))
     step_validᵥ = ones(Bool, length(step_vert))
     nsᵥ = zeros(Int, length(step_vert))
-
     for i in 1:(size(points, 1)-1)
         for j in (i+1):size(points, 1)
             vector_distance = points[j,:]-points[i,:]
             horizontal_distance = norm(vector_distance[1:2])
             vertical_distance = abs(vector_distance[3])
-            k = 1
-            for st in step_range
+            for k in eachindex(step_range)
+                st = step_range[k]
                 if (st - tol_h) < horizontal_distance < (st + tol_h)
                     γ = (values[i] - values[j])^2
                     γₛₕ[k] += γ
                     nsₕ[k] += 1
                 end
-                k += 1
             end
-            k = 1
-            for st in step_vert
+            for j in eachindex(step_vert)
+                st = step_vert[j]
                 if  (st - tol_v) < vertical_distance < (st + tol_v)
                     if horizontal_distance < bandwitch_v
                         γ = (values[i] - values[j])^2
-                        nsᵥ[k] += 1
-                        γₛᵥ[k] += γ
+                        nsᵥ[j] += 1
+                        γₛᵥ[j] += γ
                     end
                 end
-                k += 1
             end
         end
     end
     for k in eachindex(γₛₕ)
         if nsₕ[k] > 0
-            γₛₕ[k] /= nsₕ[k] .* 0.5
+            γₛₕ[k] = γₛₕ[k]/(nsₕ[k] * 2)
         else
             step_validₕ[k] = false
         end
@@ -247,7 +242,7 @@ function omni_horizontal_variogram(points::Matrix{T}, values::Vector{T},
 
    for k in eachindex(γₛᵥ)
         if nsᵥ[k] > 0
-            γₛᵥ[k] /= nsᵥ[k]
+            γₛᵥ[k] = γₛᵥ[k]/(nsᵥ[k] * 2)
         else
             step_validᵥ[k] = false
         end
