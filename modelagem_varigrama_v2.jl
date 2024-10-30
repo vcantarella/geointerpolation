@@ -1,11 +1,46 @@
 using CSV, DataFrames, CairoMakie
 using Statistics
+
 include("Variogram.jl")
 include("VariogramModels.jl")
 include("Kriging.jl")
+include("NormalScore.jl")
 
 # Read the data
 data = CSV.read("../tabela_quimica_inicial.csv", DataFrame)
+
+
+# Example usage
+# select columns x,y and prof [m]
+x = data[:, :x]
+y = data[:, :y]
+z = data[:, "prof [m]"]
+
+points = [x y z]
+
+# select values
+col_names = names(data)
+Al = data[:, "Alumínio Dissolvido"]./27e3
+Fe = data[:, "Ferro Dissolvido"]./55.8e3
+NO3 = data[:, "Nitrato"]./62e3
+F = data[:, "Fluoreto"]./19e3
+svoc = data[:, "Di(2-Etilhexil)ftalato (DEHP)"]./ #formula: C24H38O4
+    ((24*12.01 + 38*1.01 + 4*16.00)*1e3)
+Se = data[:, "Selênio Dissolvido"]./78.96e3
+Co = data[:, "Cobalto Dissolvido"]./58.93e3
+
+# make a values dataframe
+values = DataFrame(Al = Al, Fe = Fe, NO3 = NO3, F = F, svoc = svoc, Se = Se, Co = Co)
+
+# make a points dataframe
+points_df = DataFrame(x = x, y = y, z = z)
+
+# Calculate normal scores for NO3
+normal_scores_NO3 = normal_score_transformation(NO3)
+
+# Reverse the normal score transformation
+reversed_NO3 = reverse_normal_score_transformation(normal_scores_NO3, NO3)
+
 
 # select columns x,y and prof [m]
 x = data[:, :x]
@@ -24,6 +59,7 @@ svoc = data[:, "Di(2-Etilhexil)ftalato (DEHP)"]./ #formula: C24H38O4
     ((24*12.01 + 38*1.01 + 4*16.00)*1e3)
 Se = data[:, "Selênio Dissolvido"]./78.96e3
 Co = data[:, "Cobalto Dissolvido"]./58.93e3
+
 
 # make a values dataframe
 values = DataFrame(Al = Al, Fe = Fe, NO3 = NO3, F = F, svoc = svoc, Se = Se, Co = Co)
