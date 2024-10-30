@@ -1,6 +1,6 @@
 using Distributions
 using Statistics
-using StatsBas
+using StatsBase
 using Interpolations
 
 # Function to calculate the normal score transformation

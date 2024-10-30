@@ -1,6 +1,6 @@
 include("Variogram.jl")
 include("VariogramModels.jl")
-using Base.Threads
+using LinearAlgebra
 
 # TODO: verify the correctness of the code
 function simple_kriging(grid::Matrix{T}, points::Matrix{T},
@@ -33,7 +33,7 @@ function simple_kriging(grid::Matrix{T}, points::Matrix{T},
             σ²ₖ[i] = σ²
             continue
         end
-        weights = covariance_matrix[index, index] \ cov_v
+        weights = Symmetric(covariance_matrix[index, index]) \ cov_v
         # estimating the mean and variance of the estimator
         μₖ[i] = μ + sum(weights.*(values[index] .- μ))
         σ²ₖ[i] = σ² - sum(weights.*cov_v)
@@ -63,7 +63,7 @@ function simple_kriging_omnihorizontal(grid::Matrix{T}, points::Matrix{T},
     m = size(points, 1)
     μₖ = zeros(T, n)
     σ²ₖ = zeros(T, n)
-    @threads for i in 1:n
+    for i in 1:n
         index = Int[]
         cov_v = Vector{T}()
         for j in 1:m
@@ -87,7 +87,7 @@ function simple_kriging_omnihorizontal(grid::Matrix{T}, points::Matrix{T},
             index = index[1:max_points]
             cov_v = cov_v[1:max_points]
         end
-        weights = covariance_matrix[index, index] \ cov_v
+        weights =  Symmetric(covariance_matrix[index, index]) \ cov_v
         # estimating the mean and variance of the estimator
         μₖ[i] = (1-sum(weights))*μ .+ sum(weights.*(values[index]))
         σ²ₖ[i] = σ² - sum(weights.*cov_v)
@@ -125,7 +125,7 @@ function ordinary_kriging(grid::Matrix{T}, points::Matrix{T},
         
         cov_matrix_i = [cov_matrix[index, index] ones(length(index)); ones(length(index))' 0]
         cov_v = [cov_v; 0]
-        weights = cov_matrix_i \ cov_v
+        weights = Symmetric(cov_matrix_i) \ cov_v
         lagrange_mult = weights[end]
         μₖ[i] = sum(weights[1:end-1].*values[index])
         σ²ₖ[i] = σ² - lagrange_mult- sum(weights[1:end-1].*cov_v[1:end-1])
@@ -155,7 +155,7 @@ function ordinary_kriging_omnihorizontal(grid::Matrix{T}, points::Matrix{T},
     m = size(points, 1)
     μₖ = zeros(T, n)
     σ²ₖ = zeros(T, n)
-    @threads for i in 1:n
+    for i in 1:n
         index = Int[]
         cov_v = Vector{T}()
         for j in 1:m
@@ -181,7 +181,7 @@ function ordinary_kriging_omnihorizontal(grid::Matrix{T}, points::Matrix{T},
         end
         cov_matrix_i = [covariance_matrix[index, index] ones(length(index)); ones(length(index))' 0]
         cov_v = [cov_v; 0]
-        weights = cov_matrix_i \ cov_v
+        weights = Symmetric(cov_matrix_i) \ cov_v
         # estimating the mean and variance of the estimator
         lagrange_mult = weights[end]
         μₖ[i] = sum(weights[1:end-1].*values[index])
